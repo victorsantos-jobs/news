@@ -26,7 +26,7 @@
     </main>
 
     <script>
-      const DEFAULT_API_URL = 'https://news-server-123-516cfccc9db1.herokuapp.com/news';
+      const DEFAULT_API_URL = '/api/news';
       const newsGrid = document.getElementById('newsGrid');
       const statusBox = document.getElementById('status');
 
@@ -45,14 +45,17 @@
       }
 
       function getApiUrl() {
-        // Optional override via query param ?api=https://.../news
+        // Optional override via query param ?api=https://... (we proxy through /api/news)
         try {
           const params = new URLSearchParams(window.location.search);
           const qp = params.get('api');
           if (qp) {
             const normalized = normalizeApiUrl(qp);
-            new URL(normalized);
-            return normalized;
+            // Do not validate with new URL() here to allow users to paste without schema temporarily
+            const url = new URL(window.location.href);
+            url.pathname = '/api/news';
+            url.search = `api=${encodeURIComponent(normalized)}`;
+            return url.pathname + url.search;
           }
         } catch (_) {
           // ignore invalid query param
@@ -105,7 +108,9 @@
           const data = await res.json();
           const articles = Array.isArray(data) ? data : (data.articles || []);
           renderArticles(articles);
-          setStatus(`Loaded ${articles.length} article(s) from ${new URL(apiUrl).host}`);
+          let host = 'local API';
+          try { host = new URL(apiUrl, window.location.href).host || 'local API'; } catch (_) {}
+          setStatus(`Loaded ${articles.length} article(s) from ${host}`);
         } catch (err) {
           console.error(err);
           setStatus(`Failed to load news. (${err.message})`, 'error');
