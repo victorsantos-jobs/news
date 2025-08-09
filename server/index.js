@@ -36,8 +36,11 @@ app.get('/', (_req, res) => {
 });
 
 // Optional shared-secret protection for proxy-only access
-const requiredSecret = process.env.PROXY_SHARED_SECRET || '';
+function getRequiredSecret() {
+  return process.env.PROXY_SHARED_SECRET || '';
+}
 function requireProxySecret(req, res, next) {
+  const requiredSecret = getRequiredSecret();
   if (!requiredSecret) return next();
   const provided = req.get('x-proxy-secret') || '';
   if (provided !== requiredSecret) {
@@ -54,9 +57,14 @@ app.get('/news', requireProxySecret, (_req, res) => {
   });
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`News API listening on port ${port}`);
-});
+// Only start the server if this file is run directly, not when imported (e.g., by tests)
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`News API listening on port ${port}`);
+  });
+}
+
+module.exports = app;
 
 
