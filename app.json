@@ -1,0 +1,11 @@
+{
+  "name": "news-root",
+  "description": "Root app for Heroku GitHub integration pointing to server/index.js",
+  "keywords": ["node", "express", "news"],
+  "env": {},
+  "buildpacks": [
+    { "url": "heroku/nodejs" }
+  ]
+}
+
+

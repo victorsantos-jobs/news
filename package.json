@@ -1,0 +1,15 @@
+{
+  "name": "news-monorepo-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Root package to enable Heroku detection; server lives in ./server",
+  "scripts": {
+    "heroku-postbuild": "npm --prefix server install --omit=dev",
+    "start": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
+
+
