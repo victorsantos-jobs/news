@@ -44,19 +44,35 @@
       const newsGrid = document.getElementById('newsGrid');
       const statusBox = document.getElementById('status');
 
+      function normalizeApiUrl(urlString) {
+        try {
+          const u = new URL(urlString);
+          const isRoot = !u.pathname || u.pathname === '/' || u.pathname.trim() === '';
+          if (isRoot) {
+            u.pathname = '/news';
+            return u.toString();
+          }
+          return urlString;
+        } catch (_) {
+          return urlString;
+        }
+      }
+
       function getApiUrl() {
         // Optional override via query param ?api=https://.../news
         try {
           const params = new URLSearchParams(window.location.search);
           const qp = params.get('api');
           if (qp) {
-            new URL(qp);
-            localStorage.setItem('NEWS_API_URL', qp);
+            const normalized = normalizeApiUrl(qp);
+            new URL(normalized);
+            localStorage.setItem('NEWS_API_URL', normalized);
           }
         } catch (_) {
           // ignore invalid query param
         }
-        return localStorage.getItem('NEWS_API_URL') || DEFAULT_API_URL;
+        const stored = localStorage.getItem('NEWS_API_URL') || DEFAULT_API_URL;
+        return stored ? normalizeApiUrl(stored) : stored;
       }
 
       function setStatus(message, kind = 'info') {
@@ -124,9 +140,11 @@
           return;
         }
         try {
-          new URL(url);
-          localStorage.setItem('NEWS_API_URL', url);
-          setStatus('Saved API URL. Click Reload.');
+          const normalized = normalizeApiUrl(url);
+          new URL(normalized);
+          localStorage.setItem('NEWS_API_URL', normalized);
+          apiUrlInput.value = normalized;
+          setStatus('Saved API URL (auto-corrected if needed). Click Reload.');
         } catch (_e) {
           setStatus('That does not look like a valid URL.', 'error');
         }
