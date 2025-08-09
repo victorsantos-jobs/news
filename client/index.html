@@ -8,15 +8,8 @@
   </head>
   <body class="bg-gray-50 text-gray-900">
     <header class="bg-white border-b">
-      <nav class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <nav class="max-w-5xl mx-auto px-4 py-4">
         <h1 class="text-2xl font-bold tracking-tight">News</h1>
-        <a
-          href="https://news-server-123-516cfccc9db1.herokuapp.com/"
-          target="_blank"
-          rel="noopener"
-          class="text-sm text-indigo-600 hover:underline"
-          aria-label="Open API"
-        >API</a>
       </nav>
     </header>
 
@@ -51,9 +44,13 @@
       }
 
       function setStatus(message, kind = 'info') {
-        const color = kind === 'error' ? 'text-red-600' : 'text-gray-600';
-        statusBox.className = `mb-4 text-sm ${color}`;
-        statusBox.textContent = message;
+        // Show only errors to keep UI clean
+        if (kind === 'error') {
+          statusBox.className = 'mb-4 text-sm text-red-600';
+          statusBox.textContent = message;
+        } else {
+          statusBox.textContent = '';
+        }
       }
 
       function renderArticles(articles) {
@@ -88,7 +85,6 @@
 
       async function loadNews() {
         const apiUrl = getApiUrl();
-        setStatus('Loading news...');
         try {
           const res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }});
           if (!res.ok) {
@@ -102,9 +98,8 @@
           const data = await res.json();
           const articles = Array.isArray(data) ? data : (data.articles || []);
           renderArticles(articles);
-          let host = 'local API';
-          try { host = new URL(apiUrl, window.location.href).host || 'local API'; } catch (_) {}
-          setStatus(`Loaded ${articles.length} article(s) from ${host}`);
+          // Keep status clean on success
+          setStatus('');
         } catch (err) {
           console.error(err);
           setStatus(`Failed to load news. (${err.message})`, 'error');
@@ -117,7 +112,7 @@
     <footer class="mt-10 border-t bg-white/60">
       <div class="max-w-5xl mx-auto px-4 py-6 text-xs text-gray-500 flex items-center justify-between">
         <span>© <span id="year"></span> News</span>
-        <span>Powered by <a class="text-indigo-600 hover:underline" href="https://news-server-123-516cfccc9db1.herokuapp.com/" target="_blank" rel="noopener">Heroku API</a></span>
+        <span>Powered by <a class="text-indigo-600 hover:underline" href="https://news-server-123-516cfccc9db1.herokuapp.com/" target="_blank" rel="noopener">Heroku</a></span>
       </div>
       <script>
         document.getElementById('year').textContent = new Date().getFullYear();
