@@ -1,14 +1,12 @@
 export default async function handler(req, res) {
   try {
     const envApi = (process.env.NEWS_API_URL || '').trim();
-    if (!envApi) {
-      res.status(500).json({ error: 'Server not configured: NEWS_API_URL is missing' });
-      return;
-    }
+    const fallback = 'https://news-server-123-516cfccc9db1.herokuapp.com/news';
+    const baseApi = envApi || fallback;
 
     // Security: By default, do NOT allow query overrides in production
     const allowOverride = String(process.env.ALLOW_API_OVERRIDE || 'false').toLowerCase() === 'true';
-    let targetUrl = envApi;
+    let targetUrl = baseApi;
 
     // Normalize: if NEWS_API_URL points to the Heroku root, auto-append /news
     try {
