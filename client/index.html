@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>News</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <header class="bg-white border-b">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <h1 class="text-2xl font-bold">News</h1>
+        <div class="flex flex-col md:flex-row gap-2 md:items-center w-full md:w-auto">
+          <input
+            id="apiUrl"
+            type="url"
+            class="w-full md:w-96 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+            placeholder="https://<your-heroku-app>.herokuapp.com/news"
+            aria-label="Heroku API URL"
+          />
+          <div class="flex gap-2">
+            <button id="saveUrlBtn" class="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">
+              Save URL
+            </button>
+            <button id="reloadBtn" class="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300">
+              Reload
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6">
+      <div id="status" class="mb-4 text-sm text-gray-600"></div>
+      <section id="newsGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></section>
+    </main>
+
+    <script>
+      const DEFAULT_API_URL = 'https://<your-heroku-app>.herokuapp.com/news';
+
+      const apiUrlInput = document.getElementById('apiUrl');
+      const saveUrlBtn = document.getElementById('saveUrlBtn');
+      const reloadBtn = document.getElementById('reloadBtn');
+      const newsGrid = document.getElementById('newsGrid');
+      const statusBox = document.getElementById('status');
+
+      function getApiUrl() {
+        return localStorage.getItem('NEWS_API_URL') || DEFAULT_API_URL;
+      }
+
+      function setStatus(message, kind = 'info') {
+        const color = kind === 'error' ? 'text-red-600' : 'text-gray-600';
+        statusBox.className = `mb-4 text-sm ${color}`;
+        statusBox.textContent = message;
+      }
+
+      function renderArticles(articles) {
+        newsGrid.innerHTML = '';
+        if (!articles || articles.length === 0) {
+          newsGrid.innerHTML = '<p class="col-span-full text-center text-gray-500">No articles found.</p>';
+          return;
+        }
+
+        for (const article of articles) {
+          const card = document.createElement('article');
+          card.className = 'bg-white rounded-lg shadow hover:shadow-md transition overflow-hidden flex flex-col';
+
+          const imageUrl = article.imageUrl || article.urlToImage || 'https://picsum.photos/seed/fallback/800/400';
+          const published = article.publishedAt ? new Date(article.publishedAt).toLocaleString() : '';
+
+          card.innerHTML = `
+            <img src="${imageUrl}" alt="${article.title || ''}" class="w-full h-40 object-cover" />
+            <div class="p-4 flex flex-col gap-2 flex-1">
+              <h2 class="text-lg font-semibold">${article.title || 'Untitled'}</h2>
+              <p class="text-sm text-gray-600 line-clamp-3">${article.description || ''}</p>
+              <div class="mt-auto flex items-center justify-between text-xs text-gray-500">
+                <span>${article.source || ''}</span>
+                <time>${published}</time>
+              </div>
+              ${article.url ? `<a class="inline-block mt-2 text-indigo-600 hover:underline" href="${article.url}" target="_blank" rel="noopener">Read more →</a>` : ''}
+            </div>
+          `;
+          newsGrid.appendChild(card);
+        }
+      }
+
+      async function loadNews() {
+        const apiUrl = getApiUrl();
+        apiUrlInput.value = apiUrl;
+        setStatus('Loading news...');
+        try {
+          const res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }});
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const articles = Array.isArray(data) ? data : (data.articles || []);
+          renderArticles(articles);
+          setStatus(`Loaded ${articles.length} article(s) from ${new URL(apiUrl).host}`);
+        } catch (err) {
+          console.error(err);
+          setStatus(`Failed to load news. Set the correct Heroku URL above and click Reload. (${err.message})`, 'error');
+        }
+      }
+
+      saveUrlBtn.addEventListener('click', () => {
+        const url = apiUrlInput.value.trim();
+        if (!url) {
+          setStatus('Please enter a valid URL.', 'error');
+          return;
+        }
+        try {
+          new URL(url);
+          localStorage.setItem('NEWS_API_URL', url);
+          setStatus('Saved API URL. Click Reload.');
+        } catch (_e) {
+          setStatus('That does not look like a valid URL.', 'error');
+        }
+      });
+
+      reloadBtn.addEventListener('click', () => loadNews());
+
+      // Initial load
+      loadNews();
+    </script>
+  </body>
+  </html>
+
+

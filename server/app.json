@@ -1,0 +1,11 @@
+{
+  "name": "news-api",
+  "description": "Simple Node.js Express API serving news JSON",
+  "keywords": ["node", "express", "news"],
+  "env": {},
+  "buildpacks": [
+    { "url": "heroku/nodejs" }
+  ]
+}
+
+
