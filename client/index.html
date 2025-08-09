@@ -15,7 +15,7 @@
             id="apiUrl"
             type="url"
             class="w-full md:w-96 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-            placeholder="https://<your-heroku-app>.herokuapp.com/news"
+            placeholder="https://your-heroku-app.herokuapp.com/news"
             aria-label="Heroku API URL"
           />
           <div class="flex gap-2">
@@ -36,7 +36,7 @@
     </main>
 
     <script>
-      const DEFAULT_API_URL = 'https://<your-heroku-app>.herokuapp.com/news';
+      const DEFAULT_API_URL = 'https://news-server-123-516cfccc9db1.herokuapp.com/news';
 
       const apiUrlInput = document.getElementById('apiUrl');
       const saveUrlBtn = document.getElementById('saveUrlBtn');
@@ -45,6 +45,17 @@
       const statusBox = document.getElementById('status');
 
       function getApiUrl() {
+        // Optional override via query param ?api=https://.../news
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const qp = params.get('api');
+          if (qp) {
+            new URL(qp);
+            localStorage.setItem('NEWS_API_URL', qp);
+          }
+        } catch (_) {
+          // ignore invalid query param
+        }
         return localStorage.getItem('NEWS_API_URL') || DEFAULT_API_URL;
       }
 
@@ -87,6 +98,11 @@
       async function loadNews() {
         const apiUrl = getApiUrl();
         apiUrlInput.value = apiUrl;
+        if (!apiUrl || /<|>/.test(apiUrl)) {
+          setStatus('Enter your Heroku /news URL above, click Save URL, then Reload.');
+          newsGrid.innerHTML = '';
+          return;
+        }
         setStatus('Loading news...');
         try {
           const res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }});
