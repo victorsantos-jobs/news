@@ -90,7 +90,14 @@
         setStatus('Loading news...');
         try {
           const res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }});
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!res.ok) {
+            let extra = '';
+            try {
+              const errJson = await res.json();
+              if (errJson && errJson.error) extra = ` - ${errJson.error}`;
+            } catch (_) {}
+            throw new Error(`HTTP ${res.status}${extra}`);
+          }
           const data = await res.json();
           const articles = Array.isArray(data) ? data : (data.articles || []);
           renderArticles(articles);
