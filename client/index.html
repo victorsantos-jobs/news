@@ -45,21 +45,7 @@
       }
 
       function getApiUrl() {
-        // Optional override via query param ?api=https://... (we proxy through /api/news)
-        try {
-          const params = new URLSearchParams(window.location.search);
-          const qp = params.get('api');
-          if (qp) {
-            const normalized = normalizeApiUrl(qp);
-            // Do not validate with new URL() here to allow users to paste without schema temporarily
-            const url = new URL(window.location.href);
-            url.pathname = '/api/news';
-            url.search = `api=${encodeURIComponent(normalized)}`;
-            return url.pathname + url.search;
-          }
-        } catch (_) {
-          // ignore invalid query param
-        }
+        // Security-first: ignore query overrides in the client. Server can optionally allow.
         return DEFAULT_API_URL;
       }
 

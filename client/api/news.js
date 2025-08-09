@@ -1,17 +1,37 @@
 export default async function handler(req, res) {
   try {
-    const { api } = req.query || {};
-    const envApi = process.env.NEWS_API_URL;
-    const defaultApi = envApi && envApi.trim().length > 0
-      ? envApi.trim()
-      : 'https://news-server-123-516cfccc9db1.herokuapp.com/news';
+    const envApi = (process.env.NEWS_API_URL || '').trim();
+    if (!envApi) {
+      res.status(500).json({ error: 'Server not configured: NEWS_API_URL is missing' });
+      return;
+    }
 
-    const targetUrl = typeof api === 'string' && api.length > 0 ? api : defaultApi;
+    // Security: By default, do NOT allow query overrides in production
+    const allowOverride = String(process.env.ALLOW_API_OVERRIDE || 'false').toLowerCase() === 'true';
+    let targetUrl = envApi;
+
+    if (allowOverride && typeof req.query?.api === 'string' && req.query.api.length > 0) {
+      const candidate = new URL(req.query.api);
+      if (candidate.protocol !== 'https:') {
+        return res.status(400).json({ error: 'Only HTTPS upstream is allowed' });
+      }
+      const allowlist = (process.env.ALLOWED_UPSTREAM_HOSTS || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (allowlist.length > 0 && !allowlist.includes(candidate.host)) {
+        return res.status(400).json({ error: 'Upstream host is not in allowlist' });
+      }
+      targetUrl = candidate.toString();
+    }
+
+    // Timeout protection
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
     const response = await fetch(targetUrl, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       res.status(response.status).json({ error: `Upstream responded with ${response.status}` });
