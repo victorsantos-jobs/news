@@ -35,7 +35,18 @@ app.get('/', (_req, res) => {
   res.json({ message: 'News API is running', endpoints: ['/news'] });
 });
 
-app.get('/news', (_req, res) => {
+// Optional shared-secret protection for proxy-only access
+const requiredSecret = process.env.PROXY_SHARED_SECRET || '';
+function requireProxySecret(req, res, next) {
+  if (!requiredSecret) return next();
+  const provided = req.get('x-proxy-secret') || '';
+  if (provided !== requiredSecret) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+app.get('/news', requireProxySecret, (_req, res) => {
   res.json({
     status: 'ok',
     totalResults: newsArticles.length,

@@ -26,8 +26,13 @@ export default async function handler(req, res) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
 
+    const proxySecret = (process.env.PROXY_SHARED_SECRET || '').trim();
+
     const response = await fetch(targetUrl, {
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        ...(proxySecret ? { 'x-proxy-secret': proxySecret } : {}),
+      },
       cache: 'no-store',
       signal: controller.signal,
     });
