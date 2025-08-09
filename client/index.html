@@ -8,26 +8,16 @@
   </head>
   <body class="bg-gray-50 text-gray-900">
     <header class="bg-white border-b">
-      <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 class="text-2xl font-bold">News</h1>
-        <div class="flex flex-col md:flex-row gap-2 md:items-center w-full md:w-auto">
-          <input
-            id="apiUrl"
-            type="url"
-            class="w-full md:w-96 rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-            placeholder="https://your-heroku-app.herokuapp.com/news"
-            aria-label="Heroku API URL"
-          />
-          <div class="flex gap-2">
-            <button id="saveUrlBtn" class="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">
-              Save URL
-            </button>
-            <button id="reloadBtn" class="px-3 py-2 rounded bg-gray-200 hover:bg-gray-300">
-              Reload
-            </button>
-          </div>
-        </div>
-      </div>
+      <nav class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <h1 class="text-2xl font-bold tracking-tight">News</h1>
+        <a
+          href="https://news-server-123-516cfccc9db1.herokuapp.com/"
+          target="_blank"
+          rel="noopener"
+          class="text-sm text-indigo-600 hover:underline"
+          aria-label="Open API"
+        >API</a>
+      </nav>
     </header>
 
     <main class="max-w-5xl mx-auto px-4 py-6">
@@ -37,10 +27,6 @@
 
     <script>
       const DEFAULT_API_URL = 'https://news-server-123-516cfccc9db1.herokuapp.com/news';
-
-      const apiUrlInput = document.getElementById('apiUrl');
-      const saveUrlBtn = document.getElementById('saveUrlBtn');
-      const reloadBtn = document.getElementById('reloadBtn');
       const newsGrid = document.getElementById('newsGrid');
       const statusBox = document.getElementById('status');
 
@@ -66,13 +52,12 @@
           if (qp) {
             const normalized = normalizeApiUrl(qp);
             new URL(normalized);
-            localStorage.setItem('NEWS_API_URL', normalized);
+            return normalized;
           }
         } catch (_) {
           // ignore invalid query param
         }
-        const stored = localStorage.getItem('NEWS_API_URL') || DEFAULT_API_URL;
-        return stored ? normalizeApiUrl(stored) : stored;
+        return DEFAULT_API_URL;
       }
 
       function setStatus(message, kind = 'info') {
@@ -113,12 +98,6 @@
 
       async function loadNews() {
         const apiUrl = getApiUrl();
-        apiUrlInput.value = apiUrl;
-        if (!apiUrl || /<|>/.test(apiUrl)) {
-          setStatus('Enter your Heroku /news URL above, click Save URL, then Reload.');
-          newsGrid.innerHTML = '';
-          return;
-        }
         setStatus('Loading news...');
         try {
           const res = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }});
@@ -129,32 +108,22 @@
           setStatus(`Loaded ${articles.length} article(s) from ${new URL(apiUrl).host}`);
         } catch (err) {
           console.error(err);
-          setStatus(`Failed to load news. Set the correct Heroku URL above and click Reload. (${err.message})`, 'error');
+          setStatus(`Failed to load news. (${err.message})`, 'error');
         }
       }
-
-      saveUrlBtn.addEventListener('click', () => {
-        const url = apiUrlInput.value.trim();
-        if (!url) {
-          setStatus('Please enter a valid URL.', 'error');
-          return;
-        }
-        try {
-          const normalized = normalizeApiUrl(url);
-          new URL(normalized);
-          localStorage.setItem('NEWS_API_URL', normalized);
-          apiUrlInput.value = normalized;
-          setStatus('Saved API URL (auto-corrected if needed). Click Reload.');
-        } catch (_e) {
-          setStatus('That does not look like a valid URL.', 'error');
-        }
-      });
-
-      reloadBtn.addEventListener('click', () => loadNews());
 
       // Initial load
       loadNews();
     </script>
+    <footer class="mt-10 border-t bg-white/60">
+      <div class="max-w-5xl mx-auto px-4 py-6 text-xs text-gray-500 flex items-center justify-between">
+        <span>© <span id="year"></span> News</span>
+        <span>Powered by <a class="text-indigo-600 hover:underline" href="https://news-server-123-516cfccc9db1.herokuapp.com/" target="_blank" rel="noopener">Heroku API</a></span>
+      </div>
+      <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+      </script>
+    </footer>
   </body>
   </html>
 
