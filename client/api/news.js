@@ -10,6 +10,17 @@ export default async function handler(req, res) {
     const allowOverride = String(process.env.ALLOW_API_OVERRIDE || 'false').toLowerCase() === 'true';
     let targetUrl = envApi;
 
+    // Normalize: if NEWS_API_URL points to the Heroku root, auto-append /news
+    try {
+      const u = new URL(targetUrl);
+      if (!u.pathname || u.pathname === '/' || u.pathname.trim() === '') {
+        u.pathname = '/news';
+        targetUrl = u.toString();
+      }
+    } catch (_) {
+      // keep as-is; fetch will fail and surface the error
+    }
+
     if (allowOverride && typeof req.query?.api === 'string' && req.query.api.length > 0) {
       const candidate = new URL(req.query.api);
       if (candidate.protocol !== 'https:') {
